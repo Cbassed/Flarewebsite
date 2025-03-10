@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import Image from "next/image";
+
 import { X } from "lucide-react";
 
 export default function Home() {
