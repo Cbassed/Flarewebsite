@@ -88,14 +88,14 @@ export default function Home() {
             </div>
 
             {/* Content */}
-            <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono ">
+            <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono text-white ">
                <img src="Logo SVG-03.png" className="h-36 mt-12" alt="" />
 
                <div className="mt-[-20px] w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
                   <input
                      type="tel"
                      placeholder="Enter your phone number"
-                     className="border border-neutral-500 rounded-md px-4 py-5 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
+                     className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-5 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
                   />
                   <div className="flex flex-col gap-2 w-min">
                      <button
