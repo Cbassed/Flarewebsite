@@ -68,7 +68,7 @@ export default function Home() {
             <div className="pointer-events-none absolute left-0 top-0 size-full">
                <div className="pointer-events-none relative size-full overflow-hidden rounded-xl">
                   <div className="absolute size-full">
-                     <Image
+                     <img
                         src={`/${randomImageNumber}.jpg`}
                         alt="Background image"
                         className="pointer-events-none absolute size-full object-cover object-center"
@@ -76,9 +76,9 @@ export default function Home() {
                            opacity: imageLoaded ? 1 : 0,
                            transition: "opacity 2000ms ease-in-out",
                         }}
-                        width={800}
-                        height={600}
-                        priority
+                        // width={800}
+                        // height={600}
+                        // priority
                      />
                   </div>
 
