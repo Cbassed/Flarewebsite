@@ -69,7 +69,7 @@ export default function Home() {
                <div className="pointer-events-none relative size-full overflow-hidden rounded-xl">
                   <div className="absolute size-full">
                      <img
-                        src={`/${randomImageNumber}.jpg`}
+                        src={`/${randomImageNumber}.JPG`}
                         alt="Background image"
                         className="pointer-events-none absolute size-full object-cover object-center"
                         style={{
