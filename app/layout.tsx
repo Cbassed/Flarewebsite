@@ -33,10 +33,10 @@ export const metadata: Metadata = {
     siteName: "Flare",
     images: [
       {
-        url: "/og-image.png", // Create this image with a white background
-        width: 1200,
-        height: 630,
-        alt: "Flare - Reach Discovery",
+        url: "/website-preview.png", // Your screenshot image
+        width: 1200, // Adjust to match your screenshot dimensions
+        height: 630, // Adjust to match your screenshot dimensions
+        alt: "Flare Website",
       },
     ],
     locale: "en_US",
@@ -47,10 +47,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Flare",
     description: "A platform for helping you reach discovery",
-    images: ["/og-image.png"], // Same image as OpenGraph
+    images: ["/website-preview.png"], // Same image as OpenGraph
   },
-  // Theme color to white
-  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({
