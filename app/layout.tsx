@@ -17,9 +17,15 @@ export const metadata: Metadata = {
     default: "Flare",
     template: "%s | Flare"
   },
-  description: "Helping you reach discovery",
+  description: "A platform for helping you reach discovery",
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icon.png', type: 'image/png' },
+    ],
+    apple: { url: '/apple-icon.png' },
+  },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
