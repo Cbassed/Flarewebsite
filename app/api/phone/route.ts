@@ -25,7 +25,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // Save to Supabase (store the cleaned digits or formatted version as needed)
+    // Check if phone number already exists in the database
+    const { data: existingPhone, error: queryError } = await supabase
+      .from('phone_numbers')
+      .select()
+      .eq('phone', digits)
+      .single();
+
+    if (queryError && queryError.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
+      throw queryError;
+    }
+
+    // If phone already exists, return a friendly message
+    if (existingPhone) {
+      return NextResponse.json(
+        { error: 'This phone number is already registered' },
+        { status: 409 } // 409 Conflict is appropriate for this case
+      );
+    }
+
+    // Save to Supabase if phone number doesn't exist
     const { data, error } = await supabase
       .from('phone_numbers')
       .insert([
