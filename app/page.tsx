@@ -343,13 +343,7 @@ export default function Home() {
                      </button>
                      <div className="text-white">
                         <h2 className="text-xl font-semibold mb-4">About Us</h2>
-                        <p className="mb-3">Welcome to our platform. We are dedicated to providing exceptional experiences and products.</p>
-                        <p className="mb-3">Our mission is to create innovative solutions that make a positive impact on people&apos;s lives.</p>
-                        <p className="mb-3">
-                           Founded in 2023, we have been working tirelessly to build a brand that resonates with our audience and delivers value.
-                        </p>
-                        <p className="mb-3">We believe in sustainability, quality, and exceptional customer service.</p>
-                        <p>Thank you for joining us on this journey. We look forward to serving you and exceeding your expectations.</p>
+                        <p className="mb-3">A platform for helping you reach discovery.</p>
                      </div>
                   </div>
                </div>
