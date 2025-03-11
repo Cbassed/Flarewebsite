@@ -231,9 +231,9 @@ export default function Home() {
                   </form>
 
                   {submitMessage && (
-                     <div className={`w-full px-4 py-2 rounded-md ${
+                     <div className={`w-full px-4 py-2 rounded-md border ${
                         isSuccess 
-                           ? 'bg-black text-white border-red-500' // Changed from text-green-200 to text-white
+                           ? 'bg-red-700 text-white border-red-500' // Changed from text-green-200 to text-white
                            : 'bg-red-900/50 text-red-200'
                      }`}>
                         {submitMessage}
