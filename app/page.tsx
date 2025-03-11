@@ -116,6 +116,7 @@ export default function Home() {
          document.removeEventListener("mousedown", handleClickOutside);
       };
    }, [isModalOpen]);
+   
    useEffect(() => {
       // If there's a submit message, set a timer to clear it after 5 seconds
       if (submitMessage) {
@@ -127,6 +128,36 @@ export default function Home() {
          return () => clearTimeout(timer);
       }
    }, [submitMessage]); // This will run whenever submitMessage changes
+   
+   // Format phone number as user types
+   const formatPhoneNumber = (value) => {
+      // Remove all non-digit characters
+      const digits = value.replace(/\D/g, '');
+      
+      // Format based on number of digits
+      if (digits.length <= 3) {
+         return digits;
+      } else if (digits.length <= 6) {
+         return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      } else {
+         return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+      }
+   };
+   
+   // Handle phone input changes
+   const handlePhoneChange = (e) => {
+      const value = e.target.value;
+      const formattedValue = formatPhoneNumber(value);
+      setPhoneNumber(formattedValue);
+   };
+   
+   // Validate phone number before submission
+   const isValidPhoneNumber = (phone) => {
+      // Must contain 10 digits (after removing formatting)
+      const digits = phone.replace(/\D/g, '');
+      return digits.length === 10;
+   };
+   
    // Submit phone number to API
    const handleSubmit = async (e) => {
       e.preventDefault();
@@ -134,6 +165,12 @@ export default function Home() {
       if (!phoneNumber) {
          setIsSuccess(false);
          setSubmitMessage('Please enter a phone number');
+         return;
+      }
+      
+      if (!isValidPhoneNumber(phoneNumber)) {
+         setIsSuccess(false);
+         setSubmitMessage('Please enter a valid 10-digit phone number');
          return;
       }
       
@@ -215,15 +252,16 @@ export default function Home() {
                      <div className="flex flex-col gap-2 w-full">
                         <input
                            type="tel"
-                           placeholder="Enter your phone number"
+                           placeholder="Enter your phone number (xxx) xxx-xxxx"
                            value={phoneNumber}
-                           onChange={(e) => setPhoneNumber(e.target.value)}
+                           onChange={handlePhoneChange}
                            className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-5 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
+                           maxLength={14} // (xxx) xxx-xxxx = 14 chars
                         />
                         <button 
                            type="submit"
-                           disabled={isSubmitting}
-                           className="border border-neutral-500 rounded-md px-4 py-2 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full disabled:opacity-50"
+                           disabled={isSubmitting || !isValidPhoneNumber(phoneNumber)}
+                           className="border border-neutral-500 rounded-md px-4 py-2 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                            {isSubmitting ? 'Saving...' : 'Submit'}
                         </button>

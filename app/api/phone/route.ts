@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     // Get the phone number from the form
     const { phoneNumber } = await request.json();
 
-    // Simple validation
+    // Server-side validation
     if (!phoneNumber) {
       return NextResponse.json(
         { error: 'Phone number is required' },
@@ -14,11 +14,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Save to Supabase
+    // Extract digits only for validation and storage
+    const digits = phoneNumber.replace(/\D/g, '');
+    
+    // Ensure we have exactly 10 digits
+    if (digits.length !== 10) {
+      return NextResponse.json(
+        { error: 'Phone number must be 10 digits' },
+        { status: 400 }
+      );
+    }
+
+    // Save to Supabase (store the cleaned digits or formatted version as needed)
     const { data, error } = await supabase
       .from('phone_numbers')
       .insert([
-        { phone: phoneNumber }
+        { phone: digits } // Or store formatted: `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
       ])
       .select();
 
