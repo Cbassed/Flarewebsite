@@ -64,7 +64,7 @@ export default function Home() {
             }
          };
          // Use correct path format
-         img.src = `/${i}.JPG`;
+         img.src = `${i}.JPG`;
       }
    }, []);
 
