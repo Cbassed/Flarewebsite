@@ -344,6 +344,11 @@ export default function Home() {
                      <div className="text-white">
                         <h2 className="text-xl font-semibold mb-4">About Us</h2>
                         <p className="mb-3">A platform for helping you reach discovery.</p>
+                        <p className="mb-3">
+                           Discover small up and coming brands while also sharing your own outfits and brands with others.
+                        </p>
+                        <p className="mb-3"> Send out your flare </p>
+
                      </div>
                   </div>
                </div>
