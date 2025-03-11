@@ -15,7 +15,8 @@ export default function Home() {
    
    // Track preloaded images
    const [imagesPreloaded, setImagesPreloaded] = useState(false);
-   const [preloadedImages, setPreloadedImages] = useState({});
+   // Fix the unused variable by removing the reference or using a blank variable name
+   const [, setPreloadedImages] = useState({});
    
    // State for modal visibility
    const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +46,10 @@ export default function Home() {
       
       for (let i = 1; i <= totalImages; i++) {
          const img = new Image();
+         const imagePath = `${i}.JPG`;
+         
          img.onload = () => {
+            console.log(`Successfully loaded image: ${imagePath}`);
             loadedCount++;
             preloaded[i] = true;
             setPreloadedImages({...preloaded});
@@ -55,16 +59,37 @@ export default function Home() {
                console.log("All images preloaded successfully");
             }
          };
-         img.onerror = () => {
-            console.error(`Failed to load image ${i}.JPG`);
-            // Still increment to avoid getting stuck
-            loadedCount++;
-            if (loadedCount === totalImages) {
-               setImagesPreloaded(true);
-            }
+         
+         img.onerror = (e) => {
+            console.error(`Failed to load image: ${imagePath}`, e);
+            // Try lowercase extension as fallback
+            const fallbackImg = new Image();
+            const fallbackPath = `${i}.jpg`;
+            console.log(`Attempting fallback: ${fallbackPath}`);
+            
+            fallbackImg.onload = () => {
+               console.log(`Fallback successful: ${fallbackPath}`);
+               loadedCount++;
+               preloaded[i] = true;
+               setPreloadedImages({...preloaded});
+               
+               if (loadedCount === totalImages) {
+                  setImagesPreloaded(true);
+               }
+            };
+            
+            fallbackImg.onerror = () => {
+               console.error(`Fallback also failed: ${fallbackPath}`);
+               loadedCount++;
+               if (loadedCount === totalImages) {
+                  setImagesPreloaded(true);
+               }
+            };
+            
+            fallbackImg.src = fallbackPath;
          };
-         // Use correct path format
-         img.src = `${i}.JPG`;
+         
+         img.src = imagePath;
       }
    }, []);
 
@@ -229,7 +254,7 @@ export default function Home() {
                   {/* Current image */}
                   <div className="absolute size-full">
                      <img
-                        src={`/${currentImageIndex}.JPG`}
+                        src={`${currentImageIndex}.JPG`}
                         alt="Background image"
                         className="pointer-events-none absolute size-full object-cover object-center"
                         style={{
@@ -238,7 +263,8 @@ export default function Home() {
                         }}
                         onError={(e) => {
                            console.error(`Failed to load current image: ${currentImageIndex}.JPG`);
-                           e.currentTarget.style.display = 'none';
+                           // Try lowercase extension as fallback
+                           e.currentTarget.src = `${currentImageIndex}.jpg`;
                         }}
                      />
                   </div>
@@ -247,7 +273,7 @@ export default function Home() {
                   <div className="absolute size-full">
                      {nextImageIndex && (
                         <img
-                           src={`/${nextImageIndex}.JPG`}
+                           src={`${nextImageIndex}.JPG`}
                            alt="Next background image"
                            className="pointer-events-none absolute size-full object-cover object-center"
                            style={{
@@ -256,7 +282,8 @@ export default function Home() {
                            }}
                            onError={(e) => {
                               console.error(`Failed to load next image: ${nextImageIndex}.JPG`);
-                              e.currentTarget.style.display = 'none';
+                              // Try lowercase extension as fallback
+                              e.currentTarget.src = `${nextImageIndex}.jpg`;
                            }}
                         />
                      )}
@@ -269,7 +296,10 @@ export default function Home() {
 
             {/* Content */}
             <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono text-white">
-               <img src="Logo SVG-03.png" className="h-36 mt-12" alt="" />
+               <img src="Logo SVG-03.png" className="h-36 mt-12" alt="" onError={(e) => {
+                  console.error("Failed to load logo");
+                  e.currentTarget.style.display = 'none';
+               }} />
 
                <div className="mt-[-20px] w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
                   <form onSubmit={handleSubmit} className="w-full">
