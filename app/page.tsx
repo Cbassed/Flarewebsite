@@ -4,9 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 export default function Home() {
-   // Generate random number between 1-9 for a static image
-   const randomImageNumber = useMemo(() => Math.floor(Math.random() * 9) + 1, []);
-   // Only track image fade-in state
+   const totalImages = 9;
+   // State for current and next image
+   const [currentImageIndex, setCurrentImageIndex] = useState(1);
+   const [nextImageIndex, setNextImageIndex] = useState(null);
+   
+   // State for image transitions
    const [imageLoaded, setImageLoaded] = useState(false);
    const [isTransitioning, setIsTransitioning] = useState(false);
    
@@ -36,6 +39,154 @@ export default function Home() {
 
       return () => clearTimeout(timer);
    }, []);
+   
+   // Add meta tag to prevent zooming on input focus
+   useEffect(() => {
+      // Check if the viewport meta tag exists
+      let metaViewport = document.querySelector('meta[name="viewport"]');
+      
+      // If it doesn't exist, create it
+      if (!metaViewport) {
+         metaViewport = document.createElement('meta');
+         metaViewport.name = 'viewport';
+         document.head.appendChild(metaViewport);
+      }
+      
+      // Set the content to prevent zooming
+      metaViewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+      
+      // Disable horizontal scroll
+      document.body.style.overflowX = 'hidden';
+      
+      // Clean up
+      return () => {
+         // Reset the meta tag when component unmounts
+         if (metaViewport) {
+            metaViewport.content = 'width=device-width, initial-scale=1';
+         }
+         document.body.style.overflowX = '';
+      };
+   }, []);
+   
+   // Handle keyboard appearance detection
+   useEffect(() => {
+      // Function to handle viewport resize (which occurs when keyboard appears)
+      const handleResize = () => {
+         // On iOS, window.visualViewport provides accurate keyboard information
+         if (window.visualViewport) {
+            // If the visual viewport height is significantly less than the window height
+            // then the keyboard is likely active
+            const keyboardActive = window.visualViewport.height < window.innerHeight * 0.8;
+            setIsKeyboardActive(keyboardActive);
+         } else {
+            // Fallback method for browsers without visualViewport API
+            // Compare window.innerHeight before and after keyboard opens
+            const keyboardActive = window.innerHeight < window.outerHeight * 0.8;
+            setIsKeyboardActive(keyboardActive);
+         }
+      };
+
+      // Set up event listeners
+      window.addEventListener('resize', handleResize);
+      if (window.visualViewport) {
+         window.visualViewport.addEventListener('resize', handleResize);
+      }
+
+      // Initial check
+      handleResize();
+
+      // Clean up
+      return () => {
+         window.removeEventListener('resize', handleResize);
+         if (window.visualViewport) {
+            window.visualViewport.removeEventListener('resize', handleResize);
+         }
+      };
+   }, []);
+
+   // Preload all images to ensure smooth transitions
+   useEffect(() => {
+      // Preload all images
+      let loadedCount = 0;
+      const preloaded = {};
+      
+      for (let i = 1; i <= totalImages; i++) {
+         const img = new Image();
+         const imagePath = `${i}.JPG`;
+         
+         img.onload = () => {
+            console.log(`Successfully loaded image: ${imagePath}`);
+            loadedCount++;
+            preloaded[i] = true;
+            setPreloadedImages({...preloaded});
+            
+            if (loadedCount === totalImages) {
+               setImagesPreloaded(true);
+               console.log("All images preloaded successfully");
+            }
+         };
+         
+         img.onerror = (e) => {
+            console.error(`Failed to load image: ${imagePath}`, e);
+            // Try lowercase extension as fallback
+            const fallbackImg = new Image();
+            const fallbackPath = `${i}.jpg`;
+            console.log(`Attempting fallback: ${fallbackPath}`);
+            
+            fallbackImg.onload = () => {
+               console.log(`Fallback successful: ${fallbackPath}`);
+               loadedCount++;
+               preloaded[i] = true;
+               setPreloadedImages({...preloaded});
+               
+               if (loadedCount === totalImages) {
+                  setImagesPreloaded(true);
+               }
+            };
+            
+            fallbackImg.onerror = () => {
+               console.error(`Fallback also failed: ${fallbackPath}`);
+               loadedCount++;
+               if (loadedCount === totalImages) {
+                  setImagesPreloaded(true);
+               }
+            };
+            
+            fallbackImg.src = fallbackPath;
+         };
+         
+         img.src = imagePath;
+      }
+   }, []);
+
+   // Image cycling
+   useEffect(() => {
+      // Only start cycling after initial image has loaded and all images are preloaded
+      if (!imageLoaded || !imagesPreloaded) return;
+      
+      const cycleInterval = setInterval(() => {
+         // Calculate next image index (sequential from 1 to totalImages)
+         const newIndex = currentImageIndex >= totalImages ? 1 : currentImageIndex + 1;
+         
+         // Set the next image index first
+         setNextImageIndex(newIndex);
+         
+         // Then start transition
+         setIsTransitioning(true);
+         
+         // Wait for fade transition to complete, then update current image
+         setTimeout(() => {
+            setCurrentImageIndex(newIndex);
+            // Keep transitioning for a moment to ensure smooth fade
+            setTimeout(() => {
+               setIsTransitioning(false);
+            }, 300); // Small buffer after changing current image
+         }, 2000); // Match the transition time
+         
+      }, 5000); // Increase interval to allow for complete transition (2s transition + buffer)
+      
+      return () => clearInterval(cycleInterval);
+   }, [imageLoaded, imagesPreloaded, currentImageIndex]);
 
    // Handle modal open/close with animation
    useEffect(() => {
@@ -161,12 +312,14 @@ export default function Home() {
    };
 
    return (
-      <div className="bg-black">
-         <div className="flex h-screen min-h-screen flex-col justify-center">
-            {/* Background Image with fade-in effect */}
-            <div className="pointer-events-none absolute left-0 top-0 size-full">
-               <div className="pointer-events-none relative size-full overflow-hidden rounded-xl">
-                  <div className="absolute size-full">
+      <div className="bg-black overflow-x-hidden">
+         {/* Use absolute positioning when keyboard is active, fixed positioning when inactive */}
+         <div className={`flex min-h-screen flex-col justify-center ${isKeyboardActive ? 'absolute' : 'fixed'} inset-0 overflow-x-hidden`}>
+            {/* Background Image with fade-in effect - FIXED FOR MOBILE */}
+            <div className={`pointer-events-none ${isKeyboardActive ? 'absolute' : 'fixed'} inset-0 overflow-x-hidden`}>
+               <div className="pointer-events-none relative h-full w-full overflow-hidden">
+                  {/* Current image - Fixed to use object-cover and center */}
+                  <div className="absolute h-full w-full">
                      <img
                         src={`${currentImageIndex}.JPG`}
                         alt="Background image"
@@ -220,13 +373,38 @@ export default function Home() {
                   }} 
                />
 
-               <div className="mt-[-20px] w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
-                  <input
-                     type="tel"
-                     placeholder="Enter your phone number"
-                     className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-5 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
-                  />
-                  <div className="flex flex-col gap-2 w-min">
+               <div className="mt-4 w-full max-w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
+                  <form onSubmit={handleSubmit} className="w-full">
+                     <div className="flex flex-col gap-2 w-full">
+                        <input
+                           type="tel"
+                           placeholder="Enter your phone number (xxx) xxx-xxxx"
+                           value={phoneNumber}
+                           onChange={handlePhoneChange}
+                           className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-3 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none text-base"
+                           maxLength={14} // (xxx) xxx-xxxx = 14 chars
+                           // Close any soft keyboard on submit
+                           onBlur={() => document.activeElement?.blur()}
+                           // Set font-size to prevent auto-zoom
+                           style={{ fontSize: '16px' }}
+                        />
+                        <button 
+                           type="submit"
+                           disabled={isSubmitting || !isValidPhoneNumber(phoneNumber)}
+                           className="border border-neutral-500 rounded-md px-4 py-2 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                           {isSubmitting ? 'Saving...' : 'Submit'}
+                        </button>
+                     </div>
+                  </form>
+
+                  {submitMessage && (
+                     <div className="w-full px-4 py-2 rounded-md border border-red-500 bg-white text-red-600">
+                        {submitMessage}
+                     </div>
+                  )}
+                                   
+                  <div className="flex flex-col gap-2 w-full max-w-[200px]">
                      <button
                         className="border border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full"
                         onClick={() => setIsModalOpen(true)}
