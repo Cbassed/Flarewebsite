@@ -76,7 +76,7 @@ export default function Home() {
             setIsTransitioning(false);
          }, 1000); // Match the transition time
          
-      }, 8000); // Change image every 8 seconds
+      }, 5000); // Change image every 8 seconds
       
       return () => clearInterval(cycleInterval);
    }, [imageLoaded, imagesPreloaded, currentImageIndex]);
@@ -116,7 +116,17 @@ export default function Home() {
          document.removeEventListener("mousedown", handleClickOutside);
       };
    }, [isModalOpen]);
-   
+   useEffect(() => {
+      // If there's a submit message, set a timer to clear it after 5 seconds
+      if (submitMessage) {
+         const timer = setTimeout(() => {
+            setSubmitMessage('');
+         }, 5000); // 5 seconds
+         
+         // Clean up the timer when component unmounts or message changes
+         return () => clearTimeout(timer);
+      }
+   }, [submitMessage]); // This will run whenever submitMessage changes
    // Submit phone number to API
    const handleSubmit = async (e) => {
       e.preventDefault();
@@ -220,11 +230,18 @@ export default function Home() {
                      </div>
                   </form>
                   
+
                   {submitMessage && (
-                     <div className={`w-full px-4 py-2 rounded-md ${isSuccess ? 'bg-green-900/50 text-green-200' : 'bg-red-900/50 text-red-200'}`}>
+                     <div className={`w-full px-4 py-2 rounded-md ${
+                        isSuccess 
+                           ? 'bg-green-900/50 text-white' // Changed from text-green-200 to text-white
+                           : 'bg-red-900/50 text-red-200'
+                     }`}>
                         {submitMessage}
                      </div>
                   )}
+                  
+
                   
                   <div className="flex flex-col gap-2 w-min">
                      <button
