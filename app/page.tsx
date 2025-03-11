@@ -15,7 +15,6 @@ export default function Home() {
    
    // Track preloaded images
    const [imagesPreloaded, setImagesPreloaded] = useState(false);
-   // Fix the unused variable by removing the reference or using a blank variable name
    const [, setPreloadedImages] = useState({});
    
    // State for modal visibility
@@ -28,6 +27,9 @@ export default function Home() {
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [submitMessage, setSubmitMessage] = useState('');
    const [isSuccess, setIsSuccess] = useState(false);
+   
+   // Track if keyboard is active
+   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
 
    // Initial image fade-in
    useEffect(() => {
@@ -36,6 +38,42 @@ export default function Home() {
       }, 10);
 
       return () => clearTimeout(timer);
+   }, []);
+   
+   // Handle keyboard appearance detection
+   useEffect(() => {
+      // Function to handle viewport resize (which occurs when keyboard appears)
+      const handleResize = () => {
+         // On iOS, window.visualViewport provides accurate keyboard information
+         if (window.visualViewport) {
+            // If the visual viewport height is significantly less than the window height
+            // then the keyboard is likely active
+            const keyboardActive = window.visualViewport.height < window.innerHeight * 0.8;
+            setIsKeyboardActive(keyboardActive);
+         } else {
+            // Fallback method for browsers without visualViewport API
+            // Compare window.innerHeight before and after keyboard opens
+            const keyboardActive = window.innerHeight < window.outerHeight * 0.8;
+            setIsKeyboardActive(keyboardActive);
+         }
+      };
+
+      // Set up event listeners
+      window.addEventListener('resize', handleResize);
+      if (window.visualViewport) {
+         window.visualViewport.addEventListener('resize', handleResize);
+      }
+
+      // Initial check
+      handleResize();
+
+      // Clean up
+      return () => {
+         window.removeEventListener('resize', handleResize);
+         if (window.visualViewport) {
+            window.visualViewport.removeEventListener('resize', handleResize);
+         }
+      };
    }, []);
 
    // Preload all images to ensure smooth transitions
@@ -247,16 +285,17 @@ export default function Home() {
 
    return (
       <div className="bg-black">
-         <div className="flex h-screen min-h-screen flex-col justify-center">
-            {/* Background Image with fade-in effect */}
-            <div className="pointer-events-none absolute left-0 top-0 size-full">
-               <div className="pointer-events-none relative size-full overflow-hidden rounded-xl">
-                  {/* Current image */}
-                  <div className="absolute size-full">
+         {/* Use absolute positioning when keyboard is active, fixed positioning when inactive */}
+         <div className={`flex min-h-screen flex-col justify-center ${isKeyboardActive ? 'absolute' : 'fixed'} inset-0`}>
+            {/* Background Image with fade-in effect - FIXED FOR MOBILE */}
+            <div className={`pointer-events-none ${isKeyboardActive ? 'absolute' : 'fixed'} inset-0`}>
+               <div className="pointer-events-none relative h-full w-full overflow-hidden">
+                  {/* Current image - Fixed to use object-cover and center */}
+                  <div className="absolute h-full w-full">
                      <img
                         src={`${currentImageIndex}.JPG`}
                         alt="Background image"
-                        className="pointer-events-none absolute size-full object-cover object-center"
+                        className="pointer-events-none absolute h-full w-full object-cover object-center"
                         style={{
                            opacity: imageLoaded && !isTransitioning ? 1 : 0,
                            transition: "opacity 2000ms ease-in-out",
@@ -269,13 +308,13 @@ export default function Home() {
                      />
                   </div>
                   
-                  {/* Next image (for smooth transition) - always render but control opacity */}
-                  <div className="absolute size-full">
+                  {/* Next image - Fixed to use object-cover and center */}
+                  <div className="absolute h-full w-full">
                      {nextImageIndex && (
                         <img
                            src={`${nextImageIndex}.JPG`}
                            alt="Next background image"
-                           className="pointer-events-none absolute size-full object-cover object-center"
+                           className="pointer-events-none absolute h-full w-full object-cover object-center"
                            style={{
                               opacity: isTransitioning ? 1 : 0,
                               transition: "opacity 2000ms ease-in-out",
@@ -289,19 +328,24 @@ export default function Home() {
                      )}
                   </div>
 
-                  {/* Overlay */}
-                  <div className="pointer-events-none absolute size-full bg-black/60" />
+                  {/* Overlay - Made slightly darker */}
+                  <div className="pointer-events-none absolute h-full w-full bg-black/70" />
                </div>
             </div>
 
             {/* Content */}
-            <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono text-white">
-               <img src="Logo SVG-03.png" className="h-36 mt-12" alt="" onError={(e) => {
-                  console.error("Failed to load logo");
-                  e.currentTarget.style.display = 'none';
-               }} />
+            <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono text-white px-4">
+               <img 
+                  src="Logo SVG-03.png" 
+                  className="h-24 md:h-36 mt-12 max-w-full" 
+                  alt="" 
+                  onError={(e) => {
+                     console.error("Failed to load logo");
+                     e.currentTarget.style.display = 'none';
+                  }} 
+               />
 
-               <div className="mt-[-20px] w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
+               <div className="mt-4 w-full max-w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
                   <form onSubmit={handleSubmit} className="w-full">
                      <div className="flex flex-col gap-2 w-full">
                         <input
@@ -309,8 +353,10 @@ export default function Home() {
                            placeholder="Enter your phone number (xxx) xxx-xxxx"
                            value={phoneNumber}
                            onChange={handlePhoneChange}
-                           className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-5 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
+                           className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-3 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
                            maxLength={14} // (xxx) xxx-xxxx = 14 chars
+                           // Close any soft keyboard on submit
+                           onBlur={() => document.activeElement?.blur()}
                         />
                         <button 
                            type="submit"
@@ -323,23 +369,19 @@ export default function Home() {
                   </form>
 
                   {submitMessage && (
-                     <div className={`w-full px-4 py-2 rounded-md border ${
-                        isSuccess 
-                           ? 'bg-red-700 text-white border-red-500' 
-                           : 'bg-red-900/50 text-red-200'
-                     }`} style={{ backgroundColor: '#FFFFFF' }}>
+                     <div className="w-full px-4 py-2 rounded-md border border-red-500 bg-white text-red-600">
                         {submitMessage}
                      </div>
                   )}
                                    
-                  <div className="flex flex-col gap-2 w-min">
+                  <div className="flex flex-col gap-2 w-full max-w-[200px]">
                      <button
                         className="border border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full"
                         onClick={() => setIsModalOpen(true)}
                      >
                         about
                      </button>
-                     <div className="flex flex-row gap-2 w-min">
+                     <div className="flex flex-row gap-2 w-full">
                         <a
                            href="https://www.instagram.com/fl.4re"
                            target="_blank"
