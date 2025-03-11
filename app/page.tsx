@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 export default function Home() {
+   const totalImages = 9;
    // State for current and next image
-   const [currentImageIndex, setCurrentImageIndex] = useState(Math.floor(Math.random() * 9) + 1);
+   const [currentImageIndex, setCurrentImageIndex] = useState(1);
    const [nextImageIndex, setNextImageIndex] = useState(null);
    
    // State for image transitions
@@ -14,12 +15,13 @@ export default function Home() {
    
    // Track preloaded images
    const [imagesPreloaded, setImagesPreloaded] = useState(false);
+   const [preloadedImages, setPreloadedImages] = useState({});
    
    // State for modal visibility
    const [isModalOpen, setIsModalOpen] = useState(false);
    const [isModalVisible, setIsModalVisible] = useState(false);
    const modalRef = useRef(null);
-   
+
    // Phone number submission states
    const [phoneNumber, setPhoneNumber] = useState('');
    const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,53 +32,67 @@ export default function Home() {
    useEffect(() => {
       const timer = setTimeout(() => {
          setImageLoaded(true);
-      }, 1000);
+      }, 10);
 
       return () => clearTimeout(timer);
    }, []);
 
    // Preload all images to ensure smooth transitions
    useEffect(() => {
-      // Preload all 9 images
+      // Preload all images
       let loadedCount = 0;
-      const totalImages = 12;
+      const preloaded = {};
       
       for (let i = 1; i <= totalImages; i++) {
          const img = new Image();
          img.onload = () => {
             loadedCount++;
+            preloaded[i] = true;
+            setPreloadedImages({...preloaded});
+            
+            if (loadedCount === totalImages) {
+               setImagesPreloaded(true);
+               console.log("All images preloaded successfully");
+            }
+         };
+         img.onerror = () => {
+            console.error(`Failed to load image ${i}.JPG`);
+            // Still increment to avoid getting stuck
+            loadedCount++;
             if (loadedCount === totalImages) {
                setImagesPreloaded(true);
             }
          };
+         // Use correct path format
          img.src = `/${i}.JPG`;
       }
    }, []);
 
-   // Handle background image cycling
+   // Image cycling
    useEffect(() => {
       // Only start cycling after initial image has loaded and all images are preloaded
       if (!imageLoaded || !imagesPreloaded) return;
       
       const cycleInterval = setInterval(() => {
-         // Generate the next image index (different from current)
-         let newIndex;
-         do {
-            newIndex = Math.floor(Math.random() * 9) + 1;
-         } while (newIndex === currentImageIndex);
+         // Calculate next image index (sequential from 1 to totalImages)
+         const newIndex = currentImageIndex >= totalImages ? 1 : currentImageIndex + 1;
          
-         // Start transition immediately since images are already preloaded
+         // Set the next image index first
          setNextImageIndex(newIndex);
+         
+         // Then start transition
          setIsTransitioning(true);
          
-         // Wait for fade transition, then update current image
+         // Wait for fade transition to complete, then update current image
          setTimeout(() => {
             setCurrentImageIndex(newIndex);
-            // Don't set nextImageIndex to null to prevent flicker
-            setIsTransitioning(false);
-         }, 1000); // Match the transition time
+            // Keep transitioning for a moment to ensure smooth fade
+            setTimeout(() => {
+               setIsTransitioning(false);
+            }, 300); // Small buffer after changing current image
+         }, 2000); // Match the transition time
          
-      }, 5000); // Change image every 8 seconds
+      }, 5000); // Increase interval to allow for complete transition (2s transition + buffer)
       
       return () => clearInterval(cycleInterval);
    }, [imageLoaded, imagesPreloaded, currentImageIndex]);
@@ -122,7 +138,7 @@ export default function Home() {
       if (submitMessage) {
          const timer = setTimeout(() => {
             setSubmitMessage('');
-         }, 5000); // 5 seconds
+          }, 5000); // 5 seconds
          
          // Clean up the timer when component unmounts or message changes
          return () => clearTimeout(timer);
@@ -220,6 +236,10 @@ export default function Home() {
                            opacity: imageLoaded && !isTransitioning ? 1 : 0,
                            transition: "opacity 2000ms ease-in-out",
                         }}
+                        onError={(e) => {
+                           console.error(`Failed to load current image: ${currentImageIndex}.JPG`);
+                           e.currentTarget.style.display = 'none';
+                        }}
                      />
                   </div>
                   
@@ -233,6 +253,10 @@ export default function Home() {
                            style={{
                               opacity: isTransitioning ? 1 : 0,
                               transition: "opacity 2000ms ease-in-out",
+                           }}
+                           onError={(e) => {
+                              console.error(`Failed to load next image: ${nextImageIndex}.JPG`);
+                              e.currentTarget.style.display = 'none';
                            }}
                         />
                      )}
@@ -277,10 +301,7 @@ export default function Home() {
                         {submitMessage}
                      </div>
                   )}
-                  
-                  
-
-                  
+                                   
                   <div className="flex flex-col gap-2 w-min">
                      <button
                         className="border border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full"
@@ -348,7 +369,6 @@ export default function Home() {
                            Discover small up and coming brands while also sharing your own outfits and brands with others.
                         </p>
                         <p className="mb-3"> Send out your flare </p>
-
                      </div>
                   </div>
                </div>
