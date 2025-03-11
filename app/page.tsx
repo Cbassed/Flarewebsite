@@ -323,11 +323,11 @@ export default function Home() {
                   </form>
 
                   {submitMessage && (
-                     <div className={`w-full px-4 py-2 rounded-md border ${
+                     <div className={`w-full px-4 py-2 rounded-md border ${   
                         isSuccess 
-                           ? 'bg-red-700 text-white border-red-500' 
-                           : 'bg-red-900/50 text-red-200'
-                     }`} style={{ backgroundColor: '#FE3D14' }}>
+                           ? 'bg-white text-red-600 border-red-500' 
+                           : 'bg-white text-red-600 border-red-500'
+                     }`}> 
                         {submitMessage}
                      </div>
                   )}
