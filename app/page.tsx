@@ -39,7 +39,7 @@ export default function Home() {
    useEffect(() => {
       // Preload all 9 images
       let loadedCount = 0;
-      const totalImages = 9;
+      const totalImages = 12;
       
       for (let i = 1; i <= totalImages; i++) {
          const img = new Image();
