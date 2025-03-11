@@ -1,29 +1,85 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
-
+import { useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
 export default function Home() {
-   // Generate random number between 1-9 for a static image
-   const randomImageNumber = useMemo(() => Math.floor(Math.random() * 9) + 1, []);
-   // Only track image fade-in state
+   // State for current and next image
+   const [currentImageIndex, setCurrentImageIndex] = useState(Math.floor(Math.random() * 9) + 1);
+   const [nextImageIndex, setNextImageIndex] = useState(null);
+   
+   // State for image transitions
    const [imageLoaded, setImageLoaded] = useState(false);
+   const [isTransitioning, setIsTransitioning] = useState(false);
+   
+   // Track preloaded images
+   const [imagesPreloaded, setImagesPreloaded] = useState(false);
+   
    // State for modal visibility
    const [isModalOpen, setIsModalOpen] = useState(false);
-   // State for modal animation
    const [isModalVisible, setIsModalVisible] = useState(false);
-   // Ref for modal content to detect outside clicks
    const modalRef = useRef(null);
+   
+   // Phone number submission states
+   const [phoneNumber, setPhoneNumber] = useState('');
+   const [isSubmitting, setIsSubmitting] = useState(false);
+   const [submitMessage, setSubmitMessage] = useState('');
+   const [isSuccess, setIsSuccess] = useState(false);
 
+   // Initial image fade-in
    useEffect(() => {
-      // Wait 1 second before starting the fade-in
       const timer = setTimeout(() => {
          setImageLoaded(true);
-      }, 1000); // 1 second delay
+      }, 1000);
 
       return () => clearTimeout(timer);
    }, []);
+
+   // Preload all images to ensure smooth transitions
+   useEffect(() => {
+      // Preload all 9 images
+      let loadedCount = 0;
+      const totalImages = 9;
+      
+      for (let i = 1; i <= totalImages; i++) {
+         const img = new Image();
+         img.onload = () => {
+            loadedCount++;
+            if (loadedCount === totalImages) {
+               setImagesPreloaded(true);
+            }
+         };
+         img.src = `/${i}.JPG`;
+      }
+   }, []);
+
+   // Handle background image cycling
+   useEffect(() => {
+      // Only start cycling after initial image has loaded and all images are preloaded
+      if (!imageLoaded || !imagesPreloaded) return;
+      
+      const cycleInterval = setInterval(() => {
+         // Generate the next image index (different from current)
+         let newIndex;
+         do {
+            newIndex = Math.floor(Math.random() * 9) + 1;
+         } while (newIndex === currentImageIndex);
+         
+         // Start transition immediately since images are already preloaded
+         setNextImageIndex(newIndex);
+         setIsTransitioning(true);
+         
+         // Wait for fade transition, then update current image
+         setTimeout(() => {
+            setCurrentImageIndex(newIndex);
+            // Don't set nextImageIndex to null to prevent flicker
+            setIsTransitioning(false);
+         }, 1000); // Match the transition time
+         
+      }, 8000); // Change image every 8 seconds
+      
+      return () => clearInterval(cycleInterval);
+   }, [imageLoaded, imagesPreloaded, currentImageIndex]);
 
    // Handle modal open/close with animation
    useEffect(() => {
@@ -44,7 +100,7 @@ export default function Home() {
 
    // Handle outside clicks
    useEffect(() => {
-      function handleClickOutside(event: MouseEvent) {
+      function handleClickOutside(event) {
          if (modalRef.current && !modalRef.current.contains(event.target)) {
             setIsModalOpen(false);
          }
@@ -60,6 +116,46 @@ export default function Home() {
          document.removeEventListener("mousedown", handleClickOutside);
       };
    }, [isModalOpen]);
+   
+   // Submit phone number to API
+   const handleSubmit = async (e) => {
+      e.preventDefault();
+      
+      if (!phoneNumber) {
+         setIsSuccess(false);
+         setSubmitMessage('Please enter a phone number');
+         return;
+      }
+      
+      setIsSubmitting(true);
+      setSubmitMessage('');
+      
+      try {
+         const response = await fetch('/api/phone', {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ phoneNumber }),
+         });
+         
+         const result = await response.json();
+         
+         if (!response.ok) {
+            throw new Error(result.error || 'Something went wrong');
+         }
+         
+         // Success!
+         setIsSuccess(true);
+         setSubmitMessage('Thank you! We received your number.');
+         setPhoneNumber('');
+      } catch (error) {
+         setIsSuccess(false);
+         setSubmitMessage(error.message || 'Failed to save your number');
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
 
    return (
       <div className="bg-black">
@@ -67,19 +163,32 @@ export default function Home() {
             {/* Background Image with fade-in effect */}
             <div className="pointer-events-none absolute left-0 top-0 size-full">
                <div className="pointer-events-none relative size-full overflow-hidden rounded-xl">
+                  {/* Current image */}
                   <div className="absolute size-full">
                      <img
-                        src={`/${randomImageNumber}.JPG`}
+                        src={`/${currentImageIndex}.JPG`}
                         alt="Background image"
                         className="pointer-events-none absolute size-full object-cover object-center"
                         style={{
-                           opacity: imageLoaded ? 1 : 0,
+                           opacity: imageLoaded && !isTransitioning ? 1 : 0,
                            transition: "opacity 2000ms ease-in-out",
                         }}
-                        // width={800}
-                        // height={600}
-                        // priority
                      />
+                  </div>
+                  
+                  {/* Next image (for smooth transition) - always render but control opacity */}
+                  <div className="absolute size-full">
+                     {nextImageIndex && (
+                        <img
+                           src={`/${nextImageIndex}.JPG`}
+                           alt="Next background image"
+                           className="pointer-events-none absolute size-full object-cover object-center"
+                           style={{
+                              opacity: isTransitioning ? 1 : 0,
+                              transition: "opacity 2000ms ease-in-out",
+                           }}
+                        />
+                     )}
                   </div>
 
                   {/* Overlay */}
@@ -88,15 +197,35 @@ export default function Home() {
             </div>
 
             {/* Content */}
-            <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono text-white ">
+            <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono text-white">
                <img src="Logo SVG-03.png" className="h-36 mt-12" alt="" />
 
                <div className="mt-[-20px] w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
-                  <input
-                     type="tel"
-                     placeholder="Enter your phone number"
-                     className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-5 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
-                  />
+                  <form onSubmit={handleSubmit} className="w-full">
+                     <div className="flex flex-col gap-2 w-full">
+                        <input
+                           type="tel"
+                           placeholder="Enter your phone number"
+                           value={phoneNumber}
+                           onChange={(e) => setPhoneNumber(e.target.value)}
+                           className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-5 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none"
+                        />
+                        <button 
+                           type="submit"
+                           disabled={isSubmitting}
+                           className="border border-neutral-500 rounded-md px-4 py-2 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full disabled:opacity-50"
+                        >
+                           {isSubmitting ? 'Saving...' : 'Submit'}
+                        </button>
+                     </div>
+                  </form>
+                  
+                  {submitMessage && (
+                     <div className={`w-full px-4 py-2 rounded-md ${isSuccess ? 'bg-green-900/50 text-green-200' : 'bg-red-900/50 text-red-200'}`}>
+                        {submitMessage}
+                     </div>
+                  )}
+                  
                   <div className="flex flex-col gap-2 w-min">
                      <button
                         className="border border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full"
