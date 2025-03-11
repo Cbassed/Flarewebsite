@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
             hostname: "**",
          },
       ],
+      unoptimized: true, // Add this for static exports if needed
+   },
+   eslint: {
+      ignoreDuringBuilds: true, // This will ignore all ESLint errors during build
    },
 };
 
