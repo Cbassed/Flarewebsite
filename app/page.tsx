@@ -229,12 +229,11 @@ export default function Home() {
                         </button>
                      </div>
                   </form>
-                  
 
                   {submitMessage && (
                      <div className={`w-full px-4 py-2 rounded-md ${
                         isSuccess 
-                           ? 'bg-green-900/50 text-white' // Changed from text-green-200 to text-white
+                           ? 'bg-black text-white border-red-500' // Changed from text-green-200 to text-white
                            : 'bg-red-900/50 text-red-200'
                      }`}>
                         {submitMessage}
