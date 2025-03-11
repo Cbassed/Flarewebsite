@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Flare",
     description: "A platform for helping you reach discovery",
-    url: "https://getflareapp.com", // Replace with your actual URL
+    url: "https://www.getflareapp.com/", // Replace with your actual URL
     siteName: "Flare",
     images: [
       {
