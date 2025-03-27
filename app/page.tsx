@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 
 export default function Home() {
    const totalImages = 9;
    // State for current and next image
    const [currentImageIndex, setCurrentImageIndex] = useState(1);
-   const [nextImageIndex, setNextImageIndex] = useState(null);
+   const [nextImageIndex, setNextImageIndex] = useState<number | null>(null);
    
    // State for image transitions
    const [imageLoaded, setImageLoaded] = useState(false);
@@ -20,7 +20,14 @@ export default function Home() {
    // State for modal visibility
    const [isModalOpen, setIsModalOpen] = useState(false);
    const [isModalVisible, setIsModalVisible] = useState(false);
-   const modalRef = useRef(null);
+   const modalRef = useRef<HTMLDivElement>(null);
+   
+   // Reference to signup section for accessibility
+   const signupRef = useRef<HTMLDivElement>(null);
+   
+   // Track if user is in signup section
+   const [isInSignupSection, setIsInSignupSection] = useState(false);
+   const [lastScrollY, setLastScrollY] = useState(0);
 
    // Phone number submission states
    const [phoneNumber, setPhoneNumber] = useState('');
@@ -48,12 +55,12 @@ export default function Home() {
       // If it doesn't exist, create it
       if (!metaViewport) {
          metaViewport = document.createElement('meta');
-         metaViewport.name = 'viewport';
+         (metaViewport as HTMLMetaElement).name = 'viewport';
          document.head.appendChild(metaViewport);
       }
       
       // Set the content to prevent zooming
-      metaViewport.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+      (metaViewport as HTMLMetaElement).content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
       
       // Disable horizontal scroll
       document.body.style.overflowX = 'hidden';
@@ -62,7 +69,7 @@ export default function Home() {
       return () => {
          // Reset the meta tag when component unmounts
          if (metaViewport) {
-            metaViewport.content = 'width=device-width, initial-scale=1';
+            (metaViewport as HTMLMetaElement).content = 'width=device-width, initial-scale=1';
          }
          document.body.style.overflowX = '';
       };
@@ -103,12 +110,34 @@ export default function Home() {
          }
       };
    }, []);
+   
+   // Track scrolling to detect signup section without forcing scroll
+   useEffect(() => {
+      const handleScroll = () => {
+         const currentScrollY = window.scrollY;
+         const windowHeight = window.innerHeight;
+         
+         // Check if we're in the signup section (more than halfway down the viewport)
+         const isInSignup = currentScrollY > windowHeight * 0.7;
+         setIsInSignupSection(isInSignup);
+         
+         // Update last scroll position
+         setLastScrollY(currentScrollY);
+      };
+
+      window.addEventListener('scroll', handleScroll);
+      
+      // Clean up
+      return () => {
+         window.removeEventListener('scroll', handleScroll);
+      };
+   }, [lastScrollY]);
 
    // Preload all images to ensure smooth transitions
    useEffect(() => {
       // Preload all images
       let loadedCount = 0;
-      const preloaded = {};
+      const preloaded: Record<number, boolean> = {};
       
       for (let i = 1; i <= totalImages; i++) {
          const img = new Image();
@@ -207,8 +236,8 @@ export default function Home() {
 
    // Handle outside clicks
    useEffect(() => {
-      function handleClickOutside(event) {
-         if (modalRef.current && !modalRef.current.contains(event.target)) {
+      function handleClickOutside(event: MouseEvent) {
+         if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
             setIsModalOpen(false);
          }
       }
@@ -237,7 +266,7 @@ export default function Home() {
    }, [submitMessage]); // This will run whenever submitMessage changes
    
    // Format phone number as user types
-   const formatPhoneNumber = (value) => {
+   const formatPhoneNumber = (value: string) => {
       // Remove all non-digit characters
       const digits = value.replace(/\D/g, '');
       
@@ -252,21 +281,21 @@ export default function Home() {
    };
    
    // Handle phone input changes
-   const handlePhoneChange = (e) => {
+   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       const formattedValue = formatPhoneNumber(value);
       setPhoneNumber(formattedValue);
    };
    
    // Validate phone number before submission
-   const isValidPhoneNumber = (phone) => {
+   const isValidPhoneNumber = (phone: string) => {
       // Must contain 10 digits (after removing formatting)
       const digits = phone.replace(/\D/g, '');
       return digits.length === 10;
    };
    
    // Submit phone number to API
-   const handleSubmit = async (e) => {
+   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       
       if (!phoneNumber) {
@@ -303,7 +332,7 @@ export default function Home() {
          setIsSuccess(true);
          setSubmitMessage('Thank you! We received your number.');
          setPhoneNumber('');
-      } catch (error) {
+      } catch (error: any) {
          setIsSuccess(false);
          setSubmitMessage(error.message || 'Failed to save your number');
       } finally {
@@ -311,171 +340,181 @@ export default function Home() {
       }
    };
 
+   // Add this function inside your Home component
+   const scrollToSignup = () => {
+      if (signupRef.current) {
+         signupRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+   };
+
    return (
-      <div className="bg-black overflow-x-hidden">
-         {/* Use absolute positioning when keyboard is active, fixed positioning when inactive */}
-         <div className={`flex min-h-screen flex-col justify-center ${isKeyboardActive ? 'absolute' : 'fixed'} inset-0 overflow-x-hidden`}>
-            {/* Background Image with fade-in effect - FIXED FOR MOBILE */}
-            <div className={`pointer-events-none ${isKeyboardActive ? 'absolute' : 'fixed'} inset-0 overflow-x-hidden`}>
-               <div className="pointer-events-none relative h-full w-full overflow-hidden">
-                  {/* Current image - Fixed to use object-cover and center */}
-                  <div className="absolute h-full w-full">
+      <div
+         className="bg-black overflow-x-hidden h-screen snap-y snap-mandatory overflow-y-scroll" // Allow vertical scrolling while hiding horizontal overflow
+      >
+         {/* Scroll-Snap Container */}
+         <div className="h-screen snap-start">
+            {/* Landing Section */}
+            <div
+               className="min-h-screen flex flex-col items-center justify-start relative pt-8 overflow-x-hidden" // Ensure horizontal overflow is hidden
+            >
+               {/* Background image as a separate element with overlay */}
+               <div className="absolute inset-0 z-0">
+                  <div className="relative h-full w-full">
                      <img
                         src={`${currentImageIndex}.JPG`}
-                        alt="Background image"
-                        className="pointer-events-none absolute h-full w-full object-cover object-center"
-                        style={{
-                           opacity: imageLoaded && !isTransitioning ? 1 : 0,
-                           transition: "opacity 2000ms ease-in-out",
-                        }}
+                        alt="Background"
+                        className="absolute h-full w-full object-cover object-center"
                         onError={(e) => {
-                           console.error(`Failed to load current image: ${currentImageIndex}.JPG`);
-                           // Try lowercase extension as fallback
+                           console.log(`Trying fallback for: ${currentImageIndex}.JPG`);
                            e.currentTarget.src = `${currentImageIndex}.jpg`;
                         }}
                      />
+                     {/* Overlay */}
+                     <div className="absolute inset-0 bg-black/70" />
                   </div>
-                  
-                  {/* Next image - Fixed to use object-cover and center */}
-                  <div className="absolute h-full w-full">
-                     {nextImageIndex && (
+               </div>
+
+               {/* Content */}
+               <div className="flex w-full flex-col items-center justify-start z-10 relative font-mono text-white px-4">
+                  {/* Logo */}
+                  <img 
+                     src="Logo SVG-03.png" 
+                     className="h-16 md:h-24 max-w-full mb-6" 
+                     alt="Flare" 
+                     onError={(e) => {
+                        console.error("Failed to load logo");
+                        e.currentTarget.style.display = 'none';
+                     }} 
+                  />
+
+                  {/* App Description and Image */}
+                  <div className="mt-4 flex flex-col md:flex-row items-start justify-between gap-16 px-4">
+                     {/* Description */}
+                     <div className="text-center md:text-left max-w-lg text-white font-mono">
+                        <h2 className="text-2xl font-bold mb-4">Discover and Share</h2>
+                        <p className="text-sm leading-relaxed">
+                           Flare is a platform designed to help you discover small, up-and-coming brands while sharing your own outfits and brands with others. 
+                           Join a community of creators and explorers, and send out your flare to the world!
+                        </p>
+                     </div>
+
+                     {/* Image */}
+                     <div className="w-full max-w-sm -mt-8 md:mt-0">
                         <img
-                           src={`${nextImageIndex}.JPG`}
-                           alt="Next background image"
-                           className="pointer-events-none absolute h-full w-full object-cover object-center"
-                           style={{
-                              opacity: isTransitioning ? 1 : 0,
-                              transition: "opacity 2000ms ease-in-out",
-                           }}
-                           onError={(e) => {
-                              console.error(`Failed to load next image: ${nextImageIndex}.JPG`);
-                              // Try lowercase extension as fallback
-                              e.currentTarget.src = `${nextImageIndex}.jpg`;
-                           }}
+                           src="/apppreview.jpg"
+                           alt="App Description"
+                           className="w-full h-auto rounded-lg shadow-lg"
                         />
-                     )}
+                     </div>
                   </div>
+               </div>
 
-                  {/* Overlay - Made slightly darker */}
-                  <div className="pointer-events-none absolute h-full w-full bg-black/70" />
+               {/* Arrows and "Sign Up" Text */}
+               <div className="absolute bottom-8 flex flex-col items-center justify-center animate-bounce">
+                  <span className="text-white text-sm font-mono mb-2">Sign Up</span>
+                  <ChevronDown className="text-white h-6 w-6" />
                </div>
             </div>
+         </div>
 
-            {/* Content */}
-            <div className="flex w-full flex-col items-center justify-center z-10 relative font-mono text-white px-4">
-               <img 
-                  src="Logo SVG-03.png" 
-                  className="h-24 md:h-36 mt-12 max-w-full" 
-                  alt="" 
-                  onError={(e) => {
-                     console.error("Failed to load logo");
-                     e.currentTarget.style.display = 'none';
-                  }} 
-               />
 
-               <div className="mt-4 w-full max-w-[400px] flex flex-col items-center justify-center gap-4 text-sm">
-                  <form onSubmit={handleSubmit} className="w-full">
-                     <div className="flex flex-col gap-2 w-full">
-                        <input
-                           type="tel"
-                           placeholder="Enter your phone number (xxx) xxx-xxxx"
-                           value={phoneNumber}
-                           onChange={handlePhoneChange}
-                           className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-3 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none text-base"
-                           maxLength={14} // (xxx) xxx-xxxx = 14 chars
-                           // Close any soft keyboard on submit
-                           onBlur={() => document.activeElement?.blur()}
-                           // Set font-size to prevent auto-zoom
-                           style={{ fontSize: '16px' }}
-                        />
-                        <button 
-                           type="submit"
-                           disabled={isSubmitting || !isValidPhoneNumber(phoneNumber)}
-                           className="border border-neutral-500 rounded-md px-4 py-2 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                           {isSubmitting ? 'Saving...' : 'Submit'}
-                        </button>
-                     </div>
-                  </form>
-
-                  {submitMessage && (
-                     <div className="w-full px-4 py-2 rounded-md border border-red-500 bg-white text-red-600">
-                        {submitMessage}
-                     </div>
-                  )}
-                                   
-                  <div className="flex flex-col gap-2 w-full max-w-[200px]">
-                     <button
-                        className="border border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full"
-                        onClick={() => setIsModalOpen(true)}
+         {/* Signup Section */}
+         <div 
+            id="signup"
+            ref={signupRef}
+            className="h-screen snap-start flex flex-col items-center justify-center bg-black/90 border-t border-neutral-800 overflow-x-hidden" // Ensure horizontal overflow is hidden
+         >
+            <div className="w-full max-w-[400px] flex flex-col items-center justify-center gap-8 p-4">
+               <h2 className="text-white text-2xl font-mono">Sign Up</h2>
+               <form onSubmit={handleSubmit} className="w-full">
+                  <div className="flex flex-col gap-4 w-full">
+                     <input
+                        type="tel"
+                        placeholder="Enter your phone number (xxx) xxx-xxxx"
+                        value={phoneNumber}
+                        onChange={handlePhoneChange}
+                        className="border border-neutral-500 text-neutral-300 rounded-md px-4 py-3 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full focus:outline-none text-base"
+                        maxLength={14}
+                        onBlur={() => (document.activeElement as HTMLElement)?.blur()}
+                        style={{ fontSize: '16px' }}
+                     />
+                     <button 
+                        type="submit"
+                        disabled={isSubmitting || !isValidPhoneNumber(phoneNumber)}
+                        className="border border-neutral-500 rounded-md px-4 py-2 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full disabled:opacity-50 disabled:cursor-not-allowed text-white"
                      >
-                        about
+                        {isSubmitting ? 'Saving...' : 'Submit'}
                      </button>
-                     <div className="flex flex-row gap-2 w-full">
-                        <a
-                           href="https://www.instagram.com/fl.4re"
-                           target="_blank"
-                           className="border grid place-items-center border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full"
-                        >
-                           <svg
-                              stroke="currentColor"
-                              fill="currentColor"
-                              strokeWidth="0"
-                              viewBox="0 0 448 512"
-                              className="h-4"
-                              height="1em"
-                              width="1em"
-                              xmlns="http://www.w3.org/2000/svg"
-                           >
-                              <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"></path>
-                           </svg>
-                        </a>
-                        <a
-                           href="mailto:flare8154@gmail.com"
-                           className="border border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md w-full"
-                        >
-                           contact
-                        </a>
-                     </div>
                   </div>
+               </form>
+
+               {submitMessage && (
+                  <div className={`w-full px-4 py-2 rounded-md border ${isSuccess ? 'border-green-500 text-green-500' : 'border-red-500 text-red-500'} bg-neutral-900`}>
+                     {submitMessage}
+                  </div>
+               )}
+               
+               <div className="flex gap-4">
+                  <a
+                     href="mailto:flare8154@gmail.com"
+                     className="border border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md text-white"
+                  >
+                     contact
+                  </a>
+                  <a
+                     href="https://www.instagram.com/fl.4re"
+                     target="_blank"
+                     rel="noreferrer"
+                     className="border grid place-items-center border-neutral-500 rounded-md px-4 py-1 cursor-pointer hover:bg-neutral-700 transition-all duration-300 backdrop-blur-md text-white"
+                  >
+                     {/* Instagram Icon */}
+                     <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 448 512"
+                        className="h-5 w-5 text-white"
+                        fill="currentColor"
+                     >
+                        <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6-7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z" />
+                     </svg>
+                  </a>
                </div>
             </div>
+         </div>
 
-            {/* Modal with transitions */}
-            {isModalOpen && (
+         {/* Modal with transitions */}
+         {isModalOpen && (
+            <div
+               className={`fixed inset-0 z-50 flex items-center font-mono text-sm justify-center transition-opacity duration-300 ease-in-out ${
+                  isModalVisible ? "opacity-100" : "opacity-0"
+               }`}
+            >
+               {/* Backdrop */}
+               <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+
+               {/* Modal Content */}
                <div
-                  className={`fixed inset-0 z-50 flex items-center font-mono text-sm justify-center transition-opacity duration-300 ease-in-out ${
-                     isModalVisible ? "opacity-100" : "opacity-0"
+                  ref={modalRef}
+                  className={`relative bg-black border border-neutral-700 rounded-lg p-8 max-w-lg w-full mx-4 shadow-lg transition-all duration-300 ease-in-out ${
+                     isModalVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                   }`}
                >
-                  {/* Backdrop */}
-                  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-
-                  {/* Modal Content */}
-                  <div
-                     ref={modalRef}
-                     className={`relative bg-black border border-neutral-700 rounded-lg p-8 max-w-lg w-full mx-4 shadow-lg transition-all duration-300 ease-in-out ${
-                        isModalVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
-                     }`}
+                  <button
+                     className="absolute top-3 right-3 text-white hover:text-gray-300 transition-colors duration-200"
+                     onClick={() => setIsModalOpen(false)}
                   >
-                     <button
-                        className="absolute top-3 right-3 text-white hover:text-gray-300 transition-colors duration-200"
-                        onClick={() => setIsModalOpen(false)}
-                     >
-                        <X size={24} />
-                     </button>
-                     <div className="text-white">
-                        <h2 className="text-xl font-semibold mb-4">About Us</h2>
-                        <p className="mb-3">A platform for helping you reach discovery.</p>
-                        <p className="mb-3">
-                           Discover small up and coming brands while also sharing your own outfits and brands with others.
-                        </p>
-                        <p className="mb-3"> Send out your flare </p>
-                     </div>
+                     <X size={24} />
+                  </button>
+                  <div className="text-white">
+                     <h2 className="text-xl font-semibold mb-4">About Us</h2>
+                     <p className="mb-3">A platform for helping you reach discovery.</p>
+                     <p className="mb-3">
+                        Discover small up and coming brands while also sharing your own outfits and brands with others.
+                     </p>
+                     <p className="mb-3">Send out your flare</p>
                   </div>
                </div>
-            )}
-         </div>
+            </div>
+         )}
       </div>
    );
 }
