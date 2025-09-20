@@ -293,7 +293,7 @@ export default function Home() {
       const digits = phone.replace(/\D/g, '');
       return digits.length === 10;
    };
-   
+
    // Submit phone number to API
    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -349,7 +349,7 @@ export default function Home() {
 
    return (
       <div
-         className="bg-black overflow-x-hidden h-screen snap-y snap-mandatory overflow-y-scroll" // Allow vertical scrolling while hiding horizontal overflow
+         className="bg-black overflow-x-hidden h-screen snap-y snap-mandatory overflow-y-scroll" 
       >
          {/* Scroll-Snap Container */}
          <div className="h-screen snap-start">
@@ -387,35 +387,58 @@ export default function Home() {
                      }} 
                   />
 
-                  {/* App Description and Image */}
-                  <div className="mt-4 flex flex-col md:flex-row items-start justify-between gap-16 px-4">
-                     {/* Description */}
-                     <div className="text-center md:text-left max-w-lg text-white font-mono">
+               {/* App Description and Image */}
+               <div className="mt-4 flex flex-col md:flex-row items-start justify-between gap-16 px-4">
+                  {/* Description and Sign Up Container */}
+                  <div className="text-center md:text-left max-w-lg text-white font-mono flex flex-col justify-between h-full">
+                     {/* Description at top */}
+                     <div>
                         <h2 className="text-2xl font-bold mb-4">Discover and Share</h2>
                         <p className="text-sm leading-relaxed">
-                           Flare is a platform designed to help you discover small, up-and-coming brands while sharing your own outfits and brands with others. 
-                           Join a community of creators and explorers, and send out your flare to the world!
+                           Flare is a platform designed to help you discover small, up-and-coming brands while sharing your own outfits and brands with others. Manage your wardrobe, explore new styles, and connect with others. 
                         </p>
                      </div>
-
-                     {/* Image */}
-                     <div className="w-full max-w-sm -mt-8 md:mt-0">
-                        <img
-                           src="/apppreview.jpg"
-                           alt="App Description"
-                           className="w-full h-auto rounded-lg shadow-lg"
-                        />
+                     
+                     {/* Sign Up Prompt - Pushed to bottom */}
+                     <div className="mt-auto bg-transparent rounded-lg p-6 max-w-sm">
+                        <h3 className="text-white text-xl font-bold mb-3 text-center">Join the Waitlist</h3>
+                        <p className="text-neutral-300 text-sm mb-4 text-center">Be the first to discover emerging brands</p>
+                        <button 
+                           onClick={scrollToSignup}
+                           className="w-full text-white font-bold py-3 px-4 rounded-md transition-all duration-300 border-2"
+                           style={{ backgroundColor: '#FE3D14', borderColor: '#FE3D14' }}
+                           onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = '#FE3D14';
+                           }}
+                           onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#FE3D14';
+                              e.currentTarget.style.color = 'white';
+                           }}
+                        >
+                           Sign Up Now
+                        </button>
                      </div>
                   </div>
-               </div>
 
-               {/* Arrows and "Sign Up" Text */}
-               <div className="absolute bottom-8 flex flex-col items-center justify-center animate-bounce">
-                  <span className="text-white text-sm font-mono mb-2">Sign Up</span>
-                  <ChevronDown className="text-white h-6 w-6" />
+                  {/* Image - Keep original */}
+                  <div className="w-full max-w-sm -mt-8 md:mt-0">
+                     <img
+                        src="/apppreview.jpg"
+                        alt="App Description"
+                        className="w-full h-auto rounded-lg shadow-lg"
+                     />
+                  </div>
                </div>
             </div>
+
+            {/* Arrows and "Sign Up" Text */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center animate-bounce">
+               <span className="text-white text-sm font-mono mb-2">Sign Up</span>
+               <ChevronDown className="text-white h-6 w-6" />
+            </div>
          </div>
+      </div>
 
 
          {/* Signup Section */}
@@ -516,5 +539,6 @@ export default function Home() {
             </div>
          )}
       </div>
-   );
+
+);
 }
