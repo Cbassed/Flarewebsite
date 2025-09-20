@@ -398,28 +398,10 @@ export default function Home() {
                            Flare is a platform designed to help you discover small, up-and-coming brands while sharing your own outfits and brands with others. Manage your wardrobe, explore new styles, and connect with others. 
                         </p>
                      </div>
-                     
-                     {/* Sign Up Prompt - Pushed to bottom */}
-                     <div className="mt-auto bg-transparent rounded-lg p-6 max-w-sm">
-                        <h3 className="text-white text-xl font-bold mb-3 text-center">Join the Waitlist</h3>
-                        <p className="text-neutral-300 text-sm mb-4 text-center">Be the first to discover emerging brands</p>
-                        <button 
-                           onClick={scrollToSignup}
-                           className="w-full text-white font-bold py-3 px-4 rounded-md transition-all duration-300 border-2"
-                           style={{ backgroundColor: '#FE3D14', borderColor: '#FE3D14' }}
-                           onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                              e.currentTarget.style.color = '#FE3D14';
-                           }}
-                           onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#FE3D14';
-                              e.currentTarget.style.color = 'white';
-                           }}
-                        >
-                           Sign Up Now
-                        </button>
-                     </div>
                   </div>
+                     
+                     
+
 
                   {/* Image - Keep original */}
                   <div className="w-full max-w-sm -mt-8 md:mt-0">
